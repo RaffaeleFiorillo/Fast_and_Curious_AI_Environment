@@ -1,0 +1,79 @@
+[NEAT]
+fitness_criterion     = max  # select only the best agents from each generation
+fitness_threshold     = 100  # criteria for an agent that has achieved the goal.
+pop_size              = 20  # number of agents for each generation
+reset_on_extinction   = False  # when all species go extinct reset or not
+
+[DefaultGenome]
+# node activation options
+activation_default      = tanh  # default activation function for a node
+activation_mutate_rate  = 0.0  # probability for the activation function to be changed
+activation_options      = tanh  # what activations will be picked in case the activation function will be changed
+
+# node aggregation options
+aggregation_default     = sum
+aggregation_mutate_rate = 0.0
+aggregation_options     = sum
+
+# node bias options
+bias_init_mean          = 0.0
+bias_init_stdev         = 1.0
+bias_max_value          = 30.0
+bias_min_value          = -30.0
+bias_mutate_power       = 0.5
+bias_mutate_rate        = 0.7
+bias_replace_rate       = 0.1
+
+# genome compatibility options
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient   = 0.5
+
+# connection add/remove rates
+conn_add_prob           = 0.3  # probability to add a connection
+conn_delete_prob        = 0.2  # probability to remove a connection
+
+# connection enable options
+enabled_default         = True  # nodes are enabled by default
+enabled_mutate_rate     = 0.01  # probability for a node to be enabled/disabled
+
+feed_forward            = True  # True if a feedforward approach is used
+initial_connection      = full  # type of connection between layers. full means fully connected layers
+
+# node add/remove rates
+node_add_prob           = 0.2
+node_delete_prob        = 0.2
+
+# network parameters
+num_hidden              = 2
+num_inputs              = 14
+num_outputs             = 3
+
+# node response options
+response_init_mean      = 1.0
+response_init_stdev     = 0.0
+response_max_value      = 30.0
+response_min_value      = -30.0
+response_mutate_power   = 0.0
+response_mutate_rate    = 0.0
+response_replace_rate   = 0.0
+
+# connection weight options
+weight_init_mean        = 0.0
+weight_init_stdev       = 1.0
+weight_max_value        = 30
+weight_min_value        = -30
+weight_mutate_power     = 0.5
+weight_mutate_rate      = 0.8
+weight_replace_rate     = 0.1
+
+[DefaultSpeciesSet]
+compatibility_threshold = 3.0
+
+[DefaultStagnation]
+species_fitness_func = max
+max_stagnation       = 10  # number of generations with no improvements before declaring stagnation
+species_elitism      = 2
+
+[DefaultReproduction]
+elitism            = 2
+survival_threshold = 0.2
