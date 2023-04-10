@@ -27,7 +27,7 @@ def get_fitness(genomes, config):
 
 
 # if no pop is provided, upload it from the checkpoint
-def run_training(pop=neat.Checkpointer.restore_checkpoint("neat-checkpoint-3")):
+def run_training(pop=neat.Checkpointer.restore_checkpoint("saves/neat-checkpoint-4")):
     # display training information in the console
     pop.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
@@ -48,9 +48,11 @@ def train_population(config):
 
 
 def use_winner(config):
-    with open(f"best{1}.pickle", "rb") as f:
+    with open(f"best{38}.pickle", "rb") as f:
         winner = pickle.load(f)
     neural_net = neat.nn.FeedForwardNetwork.create(winner, config)
+    with open(f"best-NN-{1}.pickle", "wb") as f:
+        pickle.dump(neural_net, f)
     agent = AIa.Agent(winner, neural_net, Adp.Car())
 
     world = Env.Testing_World(screen)
@@ -66,8 +68,8 @@ if __name__ == "__main__":
                                 neat.DefaultStagnation,
                                 config_path)
 
-    # train_population(config)
-    use_winner(config)
+    train_population(config)
+    # use_winner(config)
 
 
 

@@ -13,6 +13,8 @@ obstacles_distance = 290
 parts_distance = 5
 space_between_obstacles = [o for o in range(300, 1290, obstacles_distance)]
 SCREEN_LENGTH = 1080
+LANES = [20, 121, 240]
+MAX_TIME = 150
 
 
 # returns an image ready to be displayed on the screen. "convert_alpha" makes it much faster to display
@@ -69,8 +71,8 @@ class Car:
 		self.y = self.y_values[1]
 		self.hit_box = pygame.mask.from_surface(self.image)
 		self.rect = (self.x, self.y, self.image.get_size()[0], self.image.get_size()[1])
-		self.distance_to_obstacles = [3000, 3000, 3000, 3000]  # x and y distance to the closest 2 obstacles
-		self.distance_to_parts = [3000, 3000]  # x and y distance to the closest Parts
+		self.distance_to_obstacles = [3000, 0]  # x and y distance to the closest 2 obstacles
+		self.distance_to_parts = [3000, 0]  # x and y distance to the closest Parts
 
 	@staticmethod
 	def get_car_image():
@@ -78,13 +80,15 @@ class Car:
 
 	# sort the list of object based on proximity to the car and check for collision only for the closest
 	def obstacle_collision(self, l_obstacles):
-		# sorting the list and taking only the closest two (ahead of the car) to use them for creating the input layer
-		f_obstacles = filter(lambda obs: obs.x >= self.x, l_obstacles)
-		first_obst, second_obst = sorted(f_obstacles, key=lambda o: ((self.x - o.x)**2 + (self.y - o.y)**2)**0.5)[:2]
-		distances_first_object = get_distances(self.x, self.y, first_obst)
-		distances_second_object = get_distances(self.x, self.y, second_obst)
+		# sorting the list and taking only the closest (ahead of the car) to use them for creating the input layer
+		f_obstacles = filter(lambda obs: obs.x >= self.x, l_obstacles)  # we only need obstacles in front of the car
+		# first_obst, second_obst = sorted(f_obstacles, key=lambda o: ((self.x - o.x)**2 + (self.y - o.y)**2)**0.5)[:2]
+		first_obst = sorted(f_obstacles, key=lambda o: ((self.x - o.x)**2 + (self.y - o.y)**2)**0.5)[0]
+		# distances_first_object = get_distances(self.x, self.y, first_obst)
+		# distances_second_object = get_distances(self.x, self.y, second_obst)
+		# self.distance_to_obstacles = distances_first_object+distances_second_object
+		self.distance_to_obstacles = get_distances(self.x, self.y, first_obst)
 		# checking for collision
-		self.distance_to_obstacles = distances_first_object+distances_second_object
 		offset = (self.x - first_obst.x + first_obst.adjust, self.y - first_obst.y + first_obst.adjust)
 		return self.hit_box.overlap(first_obst.hit_box, offset)
 
@@ -93,16 +97,17 @@ class Car:
 		inputs = [self.x, self.y] + self.distance_to_obstacles + self.distance_to_parts
 		return inputs
 
-	def parts_collision(self, l_parts):
+	def parts_collision(self, l_parts, dt):
 		value, indexes_to_remove = 0, []
 		# sorting the list and taking only the closest two to use them for creating the input layer
-		first_part = sorted(l_parts, key=lambda o: ((self.x - o.x)**2 + (self.y - o.y)**2)**0.5)[0]
+		f_parts = filter(lambda p: p.x >= self.x, l_parts)  # we only need parts in front of the car
+		first_part = sorted(f_parts, key=lambda o: ((self.x - o.x)**2 + (self.y - o.y)**2)**0.5)[0]
 		self.distance_to_parts = get_distances(self.x, self.y, first_part)
 		for i, part in enumerate(l_parts):
 			if part.y + 24 >= self.rect[1] and part.y <= self.rect[1] + self.rect[3]:
 				if part.x + 44 >= self.rect[0] and part.x <= self.rect[0] + self.rect[2]:
-					value += 1
-					l_parts.pop(i)
+					value += 1*dt
+					# l_parts.pop(i)
 					# value += int(l_parts.pop(i))  # part.value-> line to keep for the actual game
 		return l_parts, value
 
@@ -111,27 +116,24 @@ class Car:
 		# pygame.draw.rect(screen, (255, 255, 0), self.rect, 5)
 		# obstacles
 		pygame.draw.line(screen, (159, 159, 0), (self.x+22, self.y+10), (self.x+self.distance_to_obstacles[0], self.y+self.distance_to_obstacles[1]), 2)
-		pygame.draw.line(screen, (159, 159, 0), (self.x+22, self.y+10), (self.x+self.distance_to_obstacles[2], self.y+self.distance_to_obstacles[3]), 2)
+		# pygame.draw.line(screen, (159, 159, 0), (self.x+22, self.y+10), (self.x+self.distance_to_obstacles[2], self.y+self.distance_to_obstacles[3]), 2)
 		# parts
 		pygame.draw.line(screen, (255, 0, 255), (self.x+22, self.y+10), (self.x+self.distance_to_parts[0], self.y+self.distance_to_parts[1]), 3)
 
-	def movement(self, event, dt):
-		directions = {None: self.direction, 0: self.direction, 1: "UP", -1: "DWN"}
-		self.direction = directions[event]
-		if self.direction == "UP":
-			self.y -= self.speed * dt
-		elif self.direction == "DWN":
-			self.y += self.speed * dt
+	def movement(self, new_direction, dt):
+		if self.y in LANES:
+			self.direction = new_direction
+		self.y += self.direction * self.speed * dt  # y = y0+speed_modulo*speed*time
 
-		if self.y >= self.y_values[2]:
-			self.direction = "STOP"
-			self.y = self.y_values[2]
-		elif self.y <= self.y_values[0]:
-			self.direction = "STOP"
-			self.y = self.y_values[0]
-		elif self.y in self.middle:
-			self.direction = "STOP"
-			self.y = self.y_values[1]
+		if self.y >= LANES[2]:  # make sure the car doesn't exit the upper limit
+			self.direction = 0
+			self.y = LANES[2]
+		elif self.y <= LANES[0]:  # make sure the car doesn't exit the lower limit
+			self.direction = 0
+			self.y = LANES[0]
+		elif abs(LANES[1] - self.y) < 2 and self.direction:  # make sure the car stops in the middle lane
+			self.direction = 0
+			self.y = LANES[1]
 
 		self.rect = (self.x, self.y, self.image.get_size()[0], self.image.get_size()[1])
 

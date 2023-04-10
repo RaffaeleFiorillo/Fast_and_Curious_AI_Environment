@@ -2,6 +2,10 @@ import math
 import neat.nn
 import src.Adaptations as Adp
 
+TIME_W = 50/Adp.MAX_TIME  # [goal-dist-points(pts)]/[goal-time(sec)]= (pts/sec)
+PARTS_W = 50/60  # [goal-part-points(pts)]/[goal-parts(part)] = (pts/part)
+# STEADY_W = 225/45000  # [times-chosen-to-stay-still(unit)]/[goal-distance] = (unit/pix)
+
 
 def normalize(max_value, min_value, value):
     return (value-min_value) / (max_value-min_value)
@@ -37,8 +41,11 @@ class Agent:
         self.steady += 1-abs(output)  # rewards only outputs of 0. Because it means the Agent is more steady
 
     def update_fitness(self):
-        parts_contribute = self.parts_collected*0.12  # goal: 1.3 parts/s | total: 25% points
-        time_alive_contribute = self.time_alive*0.33  # goal : 150 seconds reward 50 points
-        steady_contribute = self.steady*0.0026  # goal: choosing not to move 127 times each second | total: 25% points
-        print(f"sc: {steady_contribute} | pc: {parts_contribute} | tc: {time_alive_contribute}")
-        self.genome.fitness = parts_contribute+time_alive_contribute+steady_contribute
+        distance_contribute = self.time_alive*TIME_W  # goal : 45000 pixels | total: 50 points  |
+        parts_contribute = self.parts_collected*PARTS_W  # goal: 2.5 pts/part | total: 50 points  |
+        # steady_contribute = self.steady*STEADY_W
+        self.genome.fitness = parts_contribute+distance_contribute  # +steady_contribute
+        if self.genome.fitness >= 10:
+            print(f"Fitness = {self.genome.fitness}"
+                  f" p={self.parts_collected} -> pc: {parts_contribute} |"
+                  f" t={self.time_alive} -> tc: {distance_contribute}")

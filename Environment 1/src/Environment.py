@@ -43,7 +43,7 @@ class Training_World:
             agent.move(self.dt)
 
     def continue_game(self):
-        return len(self.agents) and self.time_passed < 150
+        return len(self.agents) and self.time_passed < adp.MAX_TIME
 
     def start(self, agents):
         self.agents = agents
@@ -60,12 +60,12 @@ class Training_World:
             new_parts_list = []
             # collision & damage
             for i, agent in enumerate(self.agents):
-                new_parts_list, value = agent.Avatar.parts_collision(self.parts_list.internal_list)
+                new_parts_list, value = agent.Avatar.parts_collision(self.parts_list.internal_list, self.dt)
                 agent.parts_collected += value
                 if agent.Avatar.obstacle_collision(self.obstacles_list.internal_list):
                     agent.update_fitness()
                     self.agents.pop(i)
-            self.parts_list.internal_list = new_parts_list  # must be here for all agents to be able to collect parts
+            # self.parts_list.internal_list = new_parts_list  # must be here for all agents to be able to collect parts
             # obstacles effects
             self.obstacles_list.remove_obstacles()
             self.obstacles_list.create_obstacles()
@@ -111,7 +111,7 @@ class Testing_World:
         self.agent.move(self.dt)
 
     def continue_game(self):
-        return self.time_passed < 150
+        return self.time_passed < adp.MAX_TIME
 
     def start(self, agent):
         self.agent = agent
@@ -126,7 +126,7 @@ class Testing_World:
             self.parts_list.remove_parts(self.obstacles_list.internal_list)
             self.parts_list.create_parts()
             # collision & damage
-            self.parts_list.internal_list, value = self.agent.Avatar.parts_collision(self.parts_list.internal_list)
+            self.parts_list.internal_list, value = self.agent.Avatar.parts_collision(self.parts_list.internal_list, self.dt)
             if self.agent.Avatar.obstacle_collision(self.obstacles_list.internal_list):
                 # self.run = False
                 print("Failure!!!")
